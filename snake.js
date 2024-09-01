@@ -3,7 +3,7 @@ const game_width = 800;
 const game_height = 600;
 const block_size = 20;
 const snake_speed = 15;
-const game_duration = 300;  // Game duration in seconds (5 minutes)
+const game_duration = 150;  // Game duration in seconds (5 minutes)
 
 // Colors
 const BLACK = "#000000";
