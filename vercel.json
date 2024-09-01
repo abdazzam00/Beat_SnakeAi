@@ -6,6 +6,6 @@
     ],
     "routes": [
       { "src": "/snake.js", "dest": "/snake.js" },
-      { "src": "/(.*)", "dest": "/index.html" }
+      { "src": "/(.*)", "dest": "/Front.html" }
     ]
   }
