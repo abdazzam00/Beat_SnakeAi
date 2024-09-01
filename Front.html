@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid white;
+            display: block;
+            margin: 0 auto;
+        }
+        #gameInfo {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="gameInfo">
+        <div id="userInfo">
+            <h3>User Snake</h3>
+            <p>Score: <span id="userScore">0</span></p>
+            <p>Length: <span id="userLength">1</span></p>
+        </div>
+        <div id="aiInfo">
+            <h3>AI Snake</h3>
+            <p>Score: <span id="aiScore">0</span></p>
+            <p>Length: <span id="aiLength">1</span></p>
+        </div>
+        <div id="timeInfo">
+            <h3>Game Info</h3>
+            <p>Time: <span id="timeRemaining">300</span>s</p>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gameWidth = 800;
+        const gameHeight = 600;
+        const blockSize = 20;
+        const snakeSpeed = 15;
+        const gameDuration = 300; // 5 minutes
+
+        const BLACK = "#000000";
+        const WHITE = "#FFFFFF";
+        const RED = "#FF0000";
+        const GREEN = "#00FF00";
+        const BLUE = "#0000FF";
+
+        class Snake {
+            constructor(color, isAI = false) {
+                this.snakeList = [[Math.floor(Math.random() * (gameWidth - blockSize) / blockSize) * blockSize,
+                                   Math.floor(Math.random() * (gameHeight - blockSize) / blockSize) * blockSize]];
+                this.snakeLength = 1;
+                this.x = this.snakeList[0][0];
+                this.y = this.snakeList[0][1];
+                this.xChange = 0;
+                this.yChange = 0;
+                this.color = color;
+                this.isAI = isAI;
+                this.score = 0;
+            }
+
+            update(food) {
+                if (this.isAI) {
+                    const [headX, headY] = this.snakeList[this.snakeList.length - 1];
+                    const [foodX, foodY] = [food.x, food.y];
+                    
+                    if (Math.random() < 0.7) {
+                        if (Math.abs(headX - foodX) > Math.abs(headY - foodY)) {
+                            if (headX < foodX && this.xChange >= 0) {
+                                this.xChange = blockSize;
+                                this.yChange = 0;
+                            } else if (headX > foodX && this.xChange <= 0) {
+                                this.xChange = -blockSize;
+                                this.yChange = 0;
+                            } else {
+                                this.yChange = headY < foodY ? blockSize : -blockSize;
+                                this.xChange = 0;
+                            }
+                        } else {
+                            if (headY < foodY && this.yChange >= 0) {
+                                this.xChange = 0;
+                                this.yChange = blockSize;
+                            } else if (headY > foodY && this.yChange <= 0) {
+                                this.xChange = 0;
+                                this.yChange = -blockSize;
+                            } else {
+                                this.xChange = headX < foodX ? blockSize : -blockSize;
+                                this.yChange = 0;
+                            }
+                        }
+                    } else {
+                        const possibleMoves = [[blockSize, 0], [-blockSize, 0], [0, blockSize], [0, -blockSize]];
+                        [this.xChange, this.yChange] = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                    }
+                }
+
+                this.x += this.xChange;
+                this.y += this.yChange;
+
+                // Wrap around boundaries
+                this.x = (this.x + gameWidth) % gameWidth;
+                this.y = (this.y + gameHeight) % gameHeight;
+
+                this.snakeList.push([this.x, this.y]);
+                if (this.snakeList.length > this.snakeLength) {
+                    this.snakeList.shift();
+                }
+            }
+
+            isCollision() {
+                const [headX, headY] = this.snakeList[this.snakeList.length - 1];
+                return this.snakeList.slice(0, -1).some(([x, y]) => x === headX && y === headY);
+            }
+
+            eatFood(food) {
+                const [headX, headY] = this.snakeList[this.snakeList.length - 1];
+                if (headX === food.x && headY === food.y) {
+                    this.snakeLength++;
+                    this.score++;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        class Food {
+            constructor() {
+                this.reposition();
+            }
+
+            reposition() {
+                this.x = Math.floor(Math.random() * (gameWidth / blockSize)) * blockSize;
+                this.y = Math.floor(Math.random() * (gameHeight / blockSize)) * blockSize;
+            }
+        }
+
+        let userSnake = new Snake(GREEN);
+        let aiSnake = new Snake(BLUE, true);
+        let food = new Food();
+        let startTime = Date.now();
+
+        function gameLoop() {
+            ctx.fillStyle = BLACK;
+            ctx.fillRect(0, 0, gameWidth, gameHeight);
+
+            userSnake.update(food);
+            aiSnake.update(food);
+
+            if (userSnake.isCollision()) {
+                userSnake = new Snake(GREEN);
+            }
+            if (aiSnake.isCollision()) {
+                aiSnake = new Snake(BLUE, true);
+                aiSnake.score = 0;
+            }
+
+            if (userSnake.eatFood(food) || aiSnake.eatFood(food)) {
+                food.reposition();
+            }
+
+            // Draw snakes
+            drawSnake(userSnake);
+            drawSnake(aiSnake);
+
+            // Draw food
+            ctx.fillStyle = RED;
+            ctx.fillRect(food.x, food.y, blockSize, blockSize);
+
+            // Update game info
+            document.getElementById('userScore').textContent = userSnake.score;
+            document.getElementById('userLength').textContent = userSnake.snakeLength;
+            document.getElementById('aiScore').textContent = aiSnake.score;
+            document.getElementById('aiLength').textContent = aiSnake.snakeLength;
+
+            // Update time remaining
+            const timeRemaining = Math.max(0, gameDuration - Math.floor((Date.now() - startTime) / 1000));
+            document.getElementById('timeRemaining').textContent = timeRemaining;
+
+            if (timeRemaining > 0) {
+                setTimeout(gameLoop, 1000 / snakeSpeed);
+            } else {
+                gameOver();
+            }
+        }
+
+        function drawSnake(snake) {
+            ctx.fillStyle = snake.color;
+            snake.snakeList.forEach(([x, y]) => {
+                ctx.fillRect(x, y, blockSize, blockSize);
+            });
+        }
+
+        function gameOver() {
+            ctx.fillStyle = WHITE;
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            if (aiSnake.score > userSnake.score) {
+                ctx.fillText("AI will replace you AHAHA - AbdullahAI", gameWidth / 2, gameHeight / 2);
+            } else {
+                ctx.fillText("Game Over!", gameWidth / 2, gameHeight / 2);
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    if (userSnake.xChange === 0) {
+                        userSnake.xChange = -blockSize;
+                        userSnake.yChange = 0;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (userSnake.xChange === 0) {
+                        userSnake.xChange = blockSize;
+                        userSnake.yChange = 0;
+                    }
+                    break;
+                case 'ArrowUp':
+                    if (userSnake.yChange === 0) {
+                        userSnake.yChange = -blockSize;
+                        userSnake.xChange = 0;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (userSnake.yChange === 0) {
+                        userSnake.yChange = blockSize;
+                        userSnake.xChange = 0;
+                    }
+                    break;
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
