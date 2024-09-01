@@ -95,6 +95,18 @@ class Snake {
             ctx.fillRect(x, y, block_size, block_size);
         });
     }
+
+    reset() {
+        this.snake_list = [[
+            Math.floor(Math.random() * (game_width - block_size) / block_size) * block_size,
+            Math.floor(Math.random() * (game_height - block_size) / block_size) * block_size
+        ]];
+        this.snake_length = 1;
+        this.x = this.snake_list[0][0];
+        this.y = this.snake_list[0][1];
+        this.x_change = 0;
+        this.y_change = 0;
+    }
 }
 
 class Food {
@@ -144,11 +156,12 @@ function update_game() {
         ai_snake.update(food);
 
         if (user_snake.is_collision()) {
-            user_snake = new Snake(GREEN);
+            user_snake.reset();
+            user_snake.score = 0;  // Reset user score when it collides
         }
         if (ai_snake.is_collision()) {
-            ai_snake = new Snake(BLUE, true);
-            ai_snake.score = 0;  // Reset AI score when it collides
+            ai_snake.reset();
+            // Do not reset AI score here
         }
 
         if (user_snake.eat_food(food) || ai_snake.eat_food(food)) {
