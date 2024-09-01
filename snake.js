@@ -157,12 +157,11 @@ function update_game() {
 
         if (user_snake.is_collision()) {
             user_snake.reset();
-            user_snake.score = 0;  // Reset user score when it collides
+            user_snake.score = 0;
         }
         if (ai_snake.is_collision()) {
             ai_snake.reset();
-            // Remove this line to prevent resetting AI score
-            // ai_snake.score = 0;  // This line was causing the AI score to reset
+            ai_snake.score = 0;
         }
 
         if (user_snake.eat_food(food) || ai_snake.eat_food(food)) {
